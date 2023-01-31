@@ -9,15 +9,8 @@ async fn handle_reqs(req: Request<Body>) -> Result<Response<Body>, io::Error> {
     match req.method() {
         &Method::POST => {
             let mut buffer = Vec::new();
-            let mut body = Vec::new();
-            req.body().read_to_end(&mut body).unwrap();
-            while let Some(chunk) = &body.data().await {
-                let chunk_res = match chunk{
-                    Ok(chunk) => chunk,
-                    Err(e) => return Err(std::io::Error::new(ErrorKind::Other, e)),
-                };
-                buffer.extend_from_slice(&chunk_res);
-            }
+            let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
+            buffer.extend_from_slice(&body);
             let mut file = File::create("vid.mp4")?;
             file.write_all(&buffer).unwrap();
             Ok(Response::new(Body::from("Video Uploaded to https://breath.pileatedpixels.com/")))
